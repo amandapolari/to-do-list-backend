@@ -17,3 +17,12 @@ export type TUsersTasks = {
     user_id: string;
     task_id: string;
 };
+
+export type TTasksWithUsers = {
+    id: string;
+    title: string;
+    description: string;
+    created_at: string | any;
+    status: number;
+    responsibles: TUsers[];
+};

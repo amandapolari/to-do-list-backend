@@ -82,3 +82,10 @@ DROP TABLE tasks;
 DROP TABLE users_tasks;
 
 -- DELETE FROM users_tasks WHERE task_id='t001'
+
+-- Visualizando tarefas sem usuários/responsáveis:
+
+SELECT *
+FROM tasks
+    LEFT JOIN users_tasks ON users_tasks.task_id = tasks.id
+    LEFT JOIN users ON users_tasks.user_id = users.id;

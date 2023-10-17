@@ -8,7 +8,7 @@ import {
     isNumber,
     isString,
 } from './validations';
-import { TTasks, TUsers, TUsersTasks } from './types';
+import { TTasks, TTasksWithUsers, TUsers, TUsersTasks } from './types';
 
 const app = express();
 
@@ -478,3 +478,65 @@ app.delete(
         }
     }
 );
+
+// => Get tasks with users
+app.get('/tasks/users', async (req: Request, res: Response) => {
+    try {
+        // Implementar essa lógica abaixo:
+        /* 
+        SELECT *
+        FROM tasks
+        LEFT JOIN users_tasks ON users_tasks.task_id = tasks.id
+        LEFT JOIN users ON users_tasks.user_id = users.id;
+        */
+
+        // const result = await db('tasks')
+        //     .select(
+        //         'tasks.id AS taskId',
+        //         'title',
+        //         'description',
+        //         'created_at AS createdAt',
+        //         'status',
+        //         'user_id AS userId',
+        //         'name',
+        //         'email',
+        //         'password'
+        //     )
+        //     .leftJoin('users_tasks', 'users_tasks.task_id', '=', 'tasks.id')
+        //     .leftJoin('users', 'users_tasks.user_id', '=', 'users.id');
+
+        const tasks: TTasks[] = await db('tasks');
+
+        const result: TTasksWithUsers[] = [];
+
+        for (let task of tasks) {
+            const responsibles = [];
+            const users_tasks: TUsersTasks[] = await db('users_tasks').where({
+                task_id: task.id,
+            });
+            for (let user_task of users_tasks) {
+                const [user]: TUsers[] = await db('users').where({
+                    id: user_task.user_id,
+                });
+                responsibles.push(user);
+            }
+            const newTaskWithUsers: TTasksWithUsers = {
+                ...task,
+                responsibles,
+            };
+            result.push(newTaskWithUsers);
+        }
+
+        res.status(200).send(result);
+    } catch (error) {
+        console.log(error);
+        if (req.statusCode === 200) {
+            res.status(500);
+        }
+        if (error instanceof Error) {
+            res.send(error.message);
+        } else {
+            res.send('Erro inesperado');
+        }
+    }
+});

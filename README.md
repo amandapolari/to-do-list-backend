@@ -20,6 +20,7 @@
     -   [Delete task by id](#delete-task-by-id)
     -   [Add user to task by id](#add-user-to-task-by-id)
     -   [Remove user from task by id](#remove-user-from-task-by-id)
+    -   [Get tasks with users](#get-tasks-with-users)
 
 ## 1. Resumo do projeto
 
@@ -499,6 +500,15 @@ export type TTasks = {
 export type TUsersTasks = {
     user_id: string;
     task_id: string;
+};
+
+export type TTasksWithUsers = {
+    id: string;
+    title: string;
+    description: string;
+    created_at: string | any;
+    status: number;
+    responsibles: TUsers[];
 };
 ```
 
@@ -1362,4 +1372,152 @@ app.delete(
 {
     "message": "User removido da tarefa com sucesso"
 }
+```
+
+### Get tasks with users
+
+[🔼](#processo-de-desenvolvimento)
+
+`index.ts`
+
+```ts
+// => Get tasks with users
+app.get('/tasks/users', async (req: Request, res: Response) => {
+    try {
+        // Implementar essa lógica abaixo:
+        /*
+        SELECT *
+        FROM tasks
+        LEFT JOIN users_tasks ON users_tasks.task_id = tasks.id
+        LEFT JOIN users ON users_tasks.user_id = users.id;
+        */
+
+        // const result = await db('tasks')
+        //     .select(
+        //         'tasks.id AS taskId',
+        //         'title',
+        //         'description',
+        //         'created_at AS createdAt',
+        //         'status',
+        //         'user_id AS userId',
+        //         'name',
+        //         'email',
+        //         'password'
+        //     )
+        //     .leftJoin('users_tasks', 'users_tasks.task_id', '=', 'tasks.id')
+        //     .leftJoin('users', 'users_tasks.user_id', '=', 'users.id');
+
+        const tasks: TTasks[] = await db('tasks');
+
+        const result: TTasksWithUsers[] = [];
+
+        for (let task of tasks) {
+            const responsibles = [];
+            const users_tasks: TUsersTasks[] = await db('users_tasks').where({
+                task_id: task.id,
+            });
+            for (let user_task of users_tasks) {
+                const [user]: TUsers[] = await db('users').where({
+                    id: user_task.user_id,
+                });
+                responsibles.push(user);
+            }
+            const newTaskWithUsers: TTasksWithUsers = {
+                ...task,
+                responsibles,
+            };
+            result.push(newTaskWithUsers);
+        }
+
+        res.status(200).send(result);
+    } catch (error) {
+        console.log(error);
+        if (req.statusCode === 200) {
+            res.status(500);
+        }
+        if (error instanceof Error) {
+            res.send(error.message);
+        } else {
+            res.send('Erro inesperado');
+        }
+    }
+});
+```
+
+`Postman`
+
+```json
+// Request:
+// GET /tasks/users
+
+// Response:
+[
+    {
+        "id": "t001",
+        "title": "html",
+        "description": "Criar estrutura html do site",
+        "created_at": "16-10-2023 21:18:25",
+        "status": 0,
+        "responsibles": [
+            {
+                "id": "u001",
+                "name": "Lily",
+                "email": "lily@gmail.com",
+                "password": "lily123"
+            }
+        ]
+    },
+    {
+        "id": "t002",
+        "title": "style",
+        "description": "Estilizar header do site",
+        "created_at": "16-10-2023 21:18:25",
+        "status": 0,
+        "responsibles": [
+            {
+                "id": "u002",
+                "name": "Atlas",
+                "email": "atlas@gmail.com",
+                "password": "atlas123"
+            }
+        ]
+    },
+    {
+        "id": "t003",
+        "title": "test",
+        "description": "Realizar teste de usabilidade",
+        "created_at": "16-10-2023 21:18:25",
+        "status": 0,
+        "responsibles": [
+            {
+                "id": "u001",
+                "name": "Lily",
+                "email": "lily@gmail.com",
+                "password": "lily123"
+            },
+            {
+                "id": "u002",
+                "name": "Atlas",
+                "email": "atlas@gmail.com",
+                "password": "atlas123"
+            }
+        ]
+    },
+    {
+        "id": "t004",
+        "title": "deploy",
+        "description": "Hospedar site na Vercel",
+        "created_at": "16-10-2023 21:18:25",
+        "status": 0,
+        "responsibles": []
+    },
+    {
+        "id": "t006",
+        "title": "readme",
+        "description": "Incluir no readme do projeto labecommerce backend os novos endpoints",
+        "created_at": "17-10-2023 13:09:45",
+        "status": 0,
+        "responsibles": []
+    }
+]
 ```
