@@ -16,6 +16,7 @@
     -   [Get all tasks](#get-all-tasks)
         -   [Get all tasks | Get task by title | Get task by description](#get-all-tasks--get-task-by-title--get-task-by-description)
     -   [Create task](#create-task)
+    -   [ Edit task by id](#edit-task-by-id)
 
 ## 1. Resumo do projeto
 
@@ -1008,6 +1009,121 @@ app.post('/tasks', async (req: Request, res: Response) => {
         "id": "t006",
         "title": "readme",
         "description": "Fazer README do projeto",
+        "created_at": "17-10-2023 13:09:45",
+        "status": 0
+    }
+}
+```
+
+### Edit task by id
+
+[🔼](#processo-de-desenvolvimento)
+
+`index.ts`
+
+```ts
+// => Edit task by id
+app.put('/tasks/:id', async (req: Request, res: Response) => {
+    try {
+        const idToEdit = req.params.id;
+        const newId = req.body.id;
+        const newTitle = req.body.title;
+        const newDescription = req.body.description;
+        const newCreatedAt = req.body.createdAt;
+        const newStatus = req.body.status;
+
+        const [task]: TTasks[] | undefined[] = await db('tasks').where({
+            id: idToEdit,
+        });
+
+        if (!task) {
+            res.status(404);
+            throw new Error('O id fornecido não está registrado no sistema');
+        }
+
+        // id
+        if (newId !== undefined) {
+            isString(newId, 'newId', res);
+            checkMinimumLength(newId, 'newId', 4, res);
+            checkPrefixId(newId, 'newId', 't', res);
+            const [idAlreadyExists]: TTasks[] | undefined = await db(
+                'tasks'
+            ).where({ id: idToEdit });
+            if (idAlreadyExists) {
+                res.status(400);
+                throw new Error('O "id" não está disponível');
+            }
+        }
+
+        // title
+        if (newTitle !== undefined) {
+            isString(newTitle, 'newTitle', res);
+            checkMinimumLength(newTitle, 'newTitle', 2, res);
+        }
+
+        // description
+        if (newDescription !== undefined) {
+            isString(newDescription, 'newDescription', res);
+            checkMinimumLength(newDescription, 'newDescription', 2, res);
+        }
+        // createdAt
+        if (newCreatedAt !== undefined) {
+            isString(newCreatedAt, 'newCreatedAt', res);
+        }
+
+        // status
+        if (newStatus !== undefined) {
+            isNumber(newStatus, 'newStatus', res);
+        }
+
+        const newTask: TTasks = {
+            id: newId || task.id,
+            title: newTitle || task.title,
+            description: newDescription || task.description,
+            created_at: newCreatedAt || task.created_at,
+            status: isNaN(newStatus) ? task.status : newStatus,
+        };
+        await db('tasks').update(newTask).where({ id: idToEdit });
+
+        res.status(200).send({
+            message: 'Task atualizada com sucesso',
+            task: newTask,
+        });
+    } catch (error) {
+        console.log(error);
+        if (req.statusCode === 200) {
+            res.status(500);
+        }
+        if (error instanceof Error) {
+            res.send(error.message);
+        } else {
+            res.send('Erro inesperado');
+        }
+    }
+});
+```
+
+`Postman`
+
+```json
+// Request
+// path params = :id
+
+// PUT /tasks/t006
+// body JSON
+{
+    "title": "readme",
+    "description": "Incluir no readme do projeto labecommerce backend os novos endpoints"
+}
+
+// Response
+// status 200 OK
+{
+    "message": "Task atualizada com sucesso",
+    "task": {
+        "id": "t006",
+        "title": "readme",
+        "description": "Incluir no readme do projeto labecommerce backend os novos endpoints",
         "created_at": "17-10-2023 13:09:45",
         "status": 0
     }
