@@ -201,8 +201,6 @@ Criar, popular e conectar as tabelas com a extensão `MySQL`:
 `to-do-list.sql`
 
 ```sql
--- Active: 1697501723071@@127.0.0.1@3306
-
 CREATE TABLE
     users (
         id TEXT PRIMARY KEY UNIQUE NOT NULL,
@@ -231,7 +229,7 @@ CREATE TABLE
         user_id TEXT NOT NULL,
         task_id TEXT NOT NULL,
         FOREIGN KEY (user_id) REFERENCES users (id),
-        FOREIGN KEY (task_id) REFERENCES tasks (id)
+        FOREIGN KEY (task_id) REFERENCES tasks (id) ON UPDATE CASCADE ON DELETE CASCADE
     );
 
 INSERT INTO
@@ -1150,7 +1148,7 @@ app.delete('/tasks/:id', async (req: Request, res: Response) => {
             res.status(404);
             throw new Error('O "id" fornecido não está cadastrado no sistema');
         }
-
+        await db('users_tasks').del().where({ task_id: idToDelete });
         await db('tasks').del().where({ id: idToDelete });
         res.status(200).send({
             message: 'Task deletada com sucesso',
