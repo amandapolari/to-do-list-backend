@@ -58,7 +58,7 @@ app.get('/users', async (req: Request, res: Response) => {
     }
 });
 
-// Create user
+// => Create user
 app.post('/users', async (req: Request, res: Response) => {
     try {
         const { id, name, email, password } = req.body;
