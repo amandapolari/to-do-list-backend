@@ -36,7 +36,7 @@ Este projeto consiste no desenvolvimento de uma API voltada para a gestão de ta
 
 [🔼](#processo-de-desenvolvimento)
 
-Inicialmente projetei uma **tabela** no site [dbdiagram.io](https://dbdiagram.io/d/to-do-list-backend-652dad15ffbf5169f0ce3bc3) planejando as relações entre as ententidades.
+Inicialmente projetei uma **tabela** no site [dbdiagram.io](https://dbdiagram.io/d/to-do-list-backend-652dad15ffbf5169f0ce3bc3) planejando as relações entre as entidades.
 
 ![table-site-dbdiagram-io](./src/images/to-do-list-backend.png)
 
