@@ -80,3 +80,5 @@ DROP TABLE users;
 DROP TABLE tasks;
 
 DROP TABLE users_tasks;
+
+-- DELETE FROM users_tasks WHERE task_id='t001'

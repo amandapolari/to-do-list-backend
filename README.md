@@ -18,6 +18,7 @@
     -   [Create task](#create-task)
     -   [Edit task by id](#edit-task-by-id)
     -   [Delete task by id](#delete-task-by-id)
+    -   [Add user to task by id](#add-user-to-task-by-id)
 
 ## 1. Resumo do projeto
 
@@ -1178,5 +1179,104 @@ app.delete('/tasks/:id', async (req: Request, res: Response) => {
 // status 200 OK
 {
     "message": "Task deletada com sucesso"
+}
+```
+
+### Add user to task by id
+
+[🔼](#processo-de-desenvolvimento)
+
+`index.ts`
+
+```ts
+// Adicionando uma pessoa responsável pela tarefa
+// => Add user to task by id
+app.post(
+    '/tasks/:taskId/users/:userId',
+    async (req: Request, res: Response) => {
+        try {
+            const taskId = req.params.taskId;
+            const userId = req.params.userId;
+
+            // => validações
+            // taskId
+            checkPrefixId(taskId, 'taskId', 't', res);
+            isNotEmpty(taskId, 'taskId', res);
+            checkMinimumLength(taskId, 'taskId', 4, res);
+            const [idTaskAlreadyExists]: TTasks[] | undefined = await db(
+                'tasks'
+            ).where({ id: taskId });
+            if (!idTaskAlreadyExists) {
+                res.status(400);
+                throw new Error(
+                    'O "taskId" fornecido não está cadastrado no sistema'
+                );
+            }
+            // userId
+            checkPrefixId(userId, 'userId', 'u', res);
+            isNotEmpty(userId, 'userId', res);
+            checkMinimumLength(userId, 'userId', 4, res);
+            const [idUserAlreadyExists]: TUsers[] | undefined = await db(
+                'users'
+            ).where({ id: userId });
+            if (!idUserAlreadyExists) {
+                res.status(400);
+                throw new Error(
+                    'O "userId" fornecido não está cadastrado no sistema'
+                );
+            }
+            // Verificar se o usuário já recebeu a tarefa
+            const [existingUserTask]: TUsersTasks[] | undefined = await db(
+                'users_tasks'
+            ).where({ user_id: userId, task_id: taskId });
+
+            if (existingUserTask) {
+                res.status(400);
+                throw new Error('O usuário já recebeu essa tarefa');
+            }
+            //
+            const newUserTask: TUsersTasks = {
+                user_id: userId,
+                task_id: taskId,
+            };
+            await db('users_tasks').insert(newUserTask);
+            res.status(201).send({
+                message: 'User atribuído à tarefa com sucesso',
+                user: newUserTask,
+            });
+        } catch (error) {
+            console.log(error);
+            if (req.statusCode === 200) {
+                res.status(500);
+            }
+            if (error instanceof Error) {
+                res.send(error.message);
+            } else {
+                res.send('Erro inesperado');
+            }
+        }
+    }
+);
+```
+
+`Postman`
+
+```json
+// Request
+
+// path params = :taskId
+// path params = :userId
+
+// POST /tasks/:taskId/users/:userId
+// POST /tasks/t004/users/u001
+
+// Response
+// status 201 CREATED
+{
+    "message": "User atribuído à tarefa com sucesso",
+    "user": {
+        "user_id": "u001",
+        "task_id": "t004"
+    }
 }
 ```
