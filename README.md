@@ -16,7 +16,8 @@
     -   [Get all tasks](#get-all-tasks)
         -   [Get all tasks | Get task by title | Get task by description](#get-all-tasks--get-task-by-title--get-task-by-description)
     -   [Create task](#create-task)
-    -   [ Edit task by id](#edit-task-by-id)
+    -   [Edit task by id](#edit-task-by-id)
+    -   [Delete task by id](#delete-task-by-id)
 
 ## 1. Resumo do projeto
 
@@ -1127,5 +1128,57 @@ app.put('/tasks/:id', async (req: Request, res: Response) => {
         "created_at": "17-10-2023 13:09:45",
         "status": 0
     }
+}
+```
+
+### Delete task by id
+
+[🔼](#processo-de-desenvolvimento)
+
+`index.ts`
+
+```ts
+// => Delete task by id
+app.delete('/tasks/:id', async (req: Request, res: Response) => {
+    try {
+        const idToDelete = req.params.id;
+
+        const [idAlreadyExists]: TTasks[] | undefined = await db('tasks').where(
+            { id: idToDelete }
+        );
+        if (!idAlreadyExists) {
+            res.status(404);
+            throw new Error('O "id" fornecido não está cadastrado no sistema');
+        }
+
+        await db('tasks').del().where({ id: idToDelete });
+        res.status(200).send({
+            message: 'Task deletada com sucesso',
+        });
+    } catch (error) {
+        console.log(error);
+        if (req.statusCode === 200) {
+            res.status(500);
+        }
+        if (error instanceof Error) {
+            res.send(error.message);
+        } else {
+            res.send('Erro inesperado');
+        }
+    }
+});
+```
+
+`Postman`
+
+```json
+// Request
+// path params = :id
+// DELETE /tasks/t005
+
+// Response
+// status 200 OK
+{
+    "message": "Task deletada com sucesso"
 }
 ```
