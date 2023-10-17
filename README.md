@@ -11,7 +11,10 @@
 -   [5. Query Builder: Knex](#5-query-builder-knex)
 -   [6. Endpoints](#6-endpoints)
     -   [Get all users](#get-all-users)
+        -   [Get all users | get user by id](#get-all-users--get-user-by-id)
     -   [Create user](#create-user)
+    -   [Get all tasks](#get-all-tasks)
+        -   [Get all tasks | Get task by title | Get task by description](#get-all-tasks--get-task-by-title--get-task-by-description)
 
 ## 1. Resumo do projeto
 
@@ -381,6 +384,8 @@ app.get('/ping', async (req: Request, res: Response) => {
 ## 6. Endpoints
 
 ### Get all users
+
+#### Get all users | get user by id
 
 [🔼](#processo-de-desenvolvimento)
 
@@ -798,4 +803,124 @@ app.delete('/users/:id', async (req: Request, res: Response) => {
 {
     "message": "User deletado com sucesso"
 }
+```
+
+### Get all tasks
+
+#### Get all tasks | Get task by title | Get task by description
+
+[🔼](#processo-de-desenvolvimento)
+
+`index.ts`
+
+```ts
+// => Get all tasks | Get task by title | Get task by description
+app.get('/tasks', async (req: Request, res: Response) => {
+    try {
+        const searchTerm = req.query.q as string | undefined;
+        if (!searchTerm) {
+            const result = await db('tasks');
+            res.status(200).send(result);
+        } else {
+            const result = await db('tasks')
+                .where('title', 'LIKE', `%${searchTerm}%`)
+                .orWhere('description', 'LIKE', `%${searchTerm}%`);
+            res.status(200).send(result);
+        }
+    } catch (error) {
+        console.log(error);
+        if (req.statusCode === 200) {
+            res.status(500);
+        }
+        if (error instanceof Error) {
+            res.send(error.message);
+        } else {
+            res.send('Erro inesperado');
+        }
+    }
+});
+```
+
+#### Funcionalidade 1
+
+`Postman`
+
+```json
+// Request:
+// GET /tasks
+
+// Response:
+// status 200 OK
+[
+    {
+        "id": "t001",
+        "title": "html",
+        "description": "Criar estrutura html do site",
+        "created_at": "16-10-2023 21:18:25",
+        "status": 0
+    },
+    {
+        "id": "t002",
+        "title": "style",
+        "description": "Estilizar header do site",
+        "created_at": "16-10-2023 21:18:25",
+        "status": 0
+    },
+    {
+        "id": "t003",
+        "title": "test",
+        "description": "Realizar teste de usabilidade",
+        "created_at": "16-10-2023 21:18:25",
+        "status": 0
+    },
+    {
+        "id": "t004",
+        "title": "deploy",
+        "description": "Hospedar site na Vercel",
+        "created_at": "16-10-2023 21:18:25",
+        "status": 0
+    }
+]
+```
+
+#### Funcionalidade 2
+
+`Postman`
+
+```json
+// Request:
+// GET /tasks?q=style
+
+// Response:
+// status 200 OK
+[
+    {
+        "id": "t002",
+        "title": "style",
+        "description": "Estilizar header do site",
+        "created_at": "16-10-2023 21:18:25",
+        "status": 0
+    }
+]
+```
+
+#### Funcionalidade 3
+
+`Postman`
+
+```json
+// Request:
+// GET /tasks?q=criar
+
+// Response:
+// status 200 OK
+[
+    {
+        "id": "t001",
+        "title": "html",
+        "description": "Criar estrutura html do site",
+        "created_at": "16-10-2023 21:18:25",
+        "status": 0
+    }
+]
 ```
