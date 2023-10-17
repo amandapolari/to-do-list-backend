@@ -9,6 +9,8 @@
 -   [3. Instalações e Configurações](#instalações-e-configurações)
 -   [4. Servidor: Express](#4-servidor-express)
 -   [5. Query Builder: Knex](#5-query-builder-knex)
+-   [6. Endpoints](#6-endpoints)
+    -   [Get all users](#get-all-users)
 
 ## 1. Resumo do projeto
 
@@ -373,4 +375,100 @@ app.get('/ping', async (req: Request, res: Response) => {
         res.status(200).send({ message: 'Pong!' });
     } catch (error) {
 (...)
+```
+
+## 6. Endpoints
+
+### Get all users
+
+[🔼](#processo-de-desenvolvimento)
+
+`index.ts`
+
+```ts
+// => Get all users:
+app.get('/users', async (req: Request, res: Response) => {
+    try {
+        const searchTerm = req.query.q as string | undefined;
+        if (!searchTerm) {
+            const result = await db('users');
+            res.status(200).send(result);
+        } else {
+            const result = await db('users').where(
+                'name',
+                'LIKE',
+                `%${searchTerm}%`
+            );
+            res.status(200).send(result);
+        }
+    } catch (error) {
+        console.log(error);
+        if (req.statusCode === 200) {
+            res.status(500);
+        }
+        if (error instanceof Error) {
+            res.send(error.message);
+        } else {
+            res.send('Erro inesperado');
+        }
+    }
+});
+```
+
+#### Funcionalidade 1: Visualizar todos os usuários
+
+Esta requisição retorna todos os usuários cadastrados no sistema:
+
+`Postman`
+
+```json
+// Request:
+// GET /users
+
+// Response:
+// status 200 OK
+[
+    {
+        "id": "u001",
+        "name": "Lily",
+        "email": "lily@gmail.com",
+        "password": "lily123"
+    },
+    {
+        "id": "u002",
+        "name": "Atlas",
+        "email": "atlas@gmail.com",
+        "password": "atlas123"
+    }
+]
+```
+
+#### Funcionalidade 2: Visualizar usuários selecionados
+
+Esta requisição retorna os usuários que possuem nomes correspondentes à busca requisitada por query params:
+
+`Postman`
+
+```json
+// Request:
+// GET /users?q=lily
+
+// Response:
+// status 200 OK
+[
+    {
+        "id": "u001",
+        "name": "Lily",
+        "email": "lily@gmail.com",
+        "password": "lily123"
+    }
+]
+```
+
+### Create user
+
+`index.ts`
+
+```ts
+
 ```
