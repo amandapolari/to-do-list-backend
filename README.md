@@ -276,6 +276,8 @@ DROP TABLE tasks;
 DROP TABLE users_tasks;
 ```
 
+Criar arquivo de conexão e configuração do `Knex`
+
 `src/database/knex.ts`
 
 ```ts
@@ -358,4 +360,17 @@ app.get('/ping', async (req: Request, res: Response) => {
         }
     ]
 }
+```
+
+`index.ts`
+
+Após obter o resultado desejado, deixar as configurações de query builder e desfazer o retorno de users no endpoint de ping:
+
+```ts
+(...)
+app.get('/ping', async (req: Request, res: Response) => {
+    try {
+        res.status(200).send({ message: 'Pong!' });
+    } catch (error) {
+(...)
 ```
