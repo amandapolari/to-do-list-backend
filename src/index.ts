@@ -422,3 +422,59 @@ app.post(
         }
     }
 );
+
+// => Remove user from task by id
+app.delete(
+    '/tasks/:taskId/users/:userId',
+    async (req: Request, res: Response) => {
+        try {
+            const taskId = req.params.taskId;
+            const userId = req.params.userId;
+
+            // => validações
+            // taskId
+            checkPrefixId(taskId, 'taskId', 't', res);
+            isNotEmpty(taskId, 'taskId', res);
+            checkMinimumLength(taskId, 'taskId', 4, res);
+            const [idTaskAlreadyExists]: TTasks[] | undefined = await db(
+                'tasks'
+            ).where({ id: taskId });
+            if (!idTaskAlreadyExists) {
+                res.status(400);
+                throw new Error(
+                    'O "taskId" fornecido não está cadastrado no sistema'
+                );
+            }
+            // userId
+            checkPrefixId(userId, 'userId', 'u', res);
+            isNotEmpty(userId, 'userId', res);
+            checkMinimumLength(userId, 'userId', 4, res);
+            const [idUserAlreadyExists]: TUsers[] | undefined = await db(
+                'users'
+            ).where({ id: userId });
+            if (!idUserAlreadyExists) {
+                res.status(400);
+                throw new Error(
+                    'O "userId" fornecido não está cadastrado no sistema'
+                );
+            }
+            await db('users_tasks')
+                .del()
+                .where({ user_id: userId })
+                .andWhere({ task_id: taskId });
+            res.status(200).send({
+                message: 'User removido da tarefa com sucesso',
+            });
+        } catch (error) {
+            console.log(error);
+            if (req.statusCode === 200) {
+                res.status(500);
+            }
+            if (error instanceof Error) {
+                res.send(error.message);
+            } else {
+                res.send('Erro inesperado');
+            }
+        }
+    }
+);
