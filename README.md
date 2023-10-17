@@ -747,3 +747,55 @@ app.post('/users', async (req: Request, res: Response) => {
     }
 }
 ```
+
+### Delete user by id
+
+[🔼](#processo-de-desenvolvimento)
+
+`index.ts`
+
+```ts
+// => Delete user by id
+app.delete('/users/:id', async (req: Request, res: Response) => {
+    try {
+        const idToDelete = req.params.id;
+
+        const [idAlreadyExists]: TUsers[] | undefined = await db('users').where(
+            { id: idToDelete }
+        );
+        if (!idAlreadyExists) {
+            res.status(404);
+            throw new Error('O "id" fornecido não está cadastrado no sistema');
+        }
+
+        await db('users').del().where({ id: idToDelete });
+        res.status(200).send({
+            message: 'User deletado com sucesso',
+        });
+    } catch (error) {
+        console.log(error);
+        if (req.statusCode === 200) {
+            res.status(500);
+        }
+        if (error instanceof Error) {
+            res.send(error.message);
+        } else {
+            res.send('Erro inesperado');
+        }
+    }
+});
+```
+
+`Postman`
+
+```json
+// Request:
+// path params = :id
+// DELETE /users/u004
+
+// Response:
+// status 200 ok
+{
+    "message": "User deletado com sucesso"
+}
+```
