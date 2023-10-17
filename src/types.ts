@@ -10,7 +10,7 @@ export type TTasks = {
     title: string;
     description: string;
     created_at: string | any;
-    status: boolean | number;
+    status: number;
 };
 
 export type TUsersTasks = {

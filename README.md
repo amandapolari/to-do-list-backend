@@ -15,6 +15,7 @@
     -   [Create user](#create-user)
     -   [Get all tasks](#get-all-tasks)
         -   [Get all tasks | Get task by title | Get task by description](#get-all-tasks--get-task-by-title--get-task-by-description)
+    -   [Create task](#create-task)
 
 ## 1. Resumo do projeto
 
@@ -490,7 +491,7 @@ export type TTasks = {
     title: string;
     description: string;
     created_at: string | any;
-    status: boolean | number;
+    status: number;
 };
 
 export type TUsersTasks = {
@@ -923,4 +924,92 @@ app.get('/tasks', async (req: Request, res: Response) => {
         "status": 0
     }
 ]
+```
+
+### Create task
+
+[🔼](#processo-de-desenvolvimento)
+
+`index.ts`
+
+```ts
+// => Create task
+app.post('/tasks', async (req: Request, res: Response) => {
+    try {
+        const { id, title, description } = req.body;
+
+        // id
+        isNotEmpty(id, 'id', res);
+        isString(id, 'id', res);
+        checkMinimumLength(id, 'id', 4, res);
+        checkPrefixId(id, 'id', 't', res);
+        const [idAlreadyExists]: TTasks[] | undefined = await db('tasks').where(
+            { id }
+        );
+        if (idAlreadyExists) {
+            res.status(400);
+            throw new Error('O "id" não está disponível');
+        }
+
+        // title
+        isNotEmpty(title, 'title', res);
+        isString(title, 'title', res);
+        checkMinimumLength(title, 'title', 2, res);
+
+        // description
+        isNotEmpty(description, 'description', res);
+        isString(description, 'description', res);
+        checkMinimumLength(description, 'description', 2, res);
+
+        const newTask = {
+            id,
+            title,
+            description,
+        };
+        await db('tasks').insert(newTask);
+
+        const [insertedTask] = await db('tasks').where({ id });
+
+        res.status(201).send({
+            message: 'Task criada com sucesso',
+            task: insertedTask,
+        });
+    } catch (error) {
+        console.log(error);
+        if (req.statusCode === 200) {
+            res.status(500);
+        }
+        if (error instanceof Error) {
+            res.send(error.message);
+        } else {
+            res.send('Erro inesperado');
+        }
+    }
+});
+```
+
+`Postman`
+
+```JSON
+// Request:
+// POST /tasks
+// body JSON
+{
+    "id": "t006",
+    "title": "readme",
+    "description": "Fazer README do projeto"
+}
+
+// Response:
+// status 201 CREATED
+{
+    "message": "Task criada com sucesso",
+    "task": {
+        "id": "t006",
+        "title": "readme",
+        "description": "Fazer README do projeto",
+        "created_at": "17-10-2023 13:09:45",
+        "status": 0
+    }
+}
 ```

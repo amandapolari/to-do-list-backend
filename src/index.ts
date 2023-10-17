@@ -1,8 +1,13 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { db } from './database/knex';
-import { checkMinimumLength, isNotEmpty, isString } from './validations';
-import { TUsers } from './types';
+import {
+    checkMinimumLength,
+    checkPrefixId,
+    isNotEmpty,
+    isString,
+} from './validations';
+import { TTasks, TUsers } from './types';
 
 const app = express();
 
@@ -170,6 +175,60 @@ app.get('/tasks', async (req: Request, res: Response) => {
                 .orWhere('description', 'LIKE', `%${searchTerm}%`);
             res.status(200).send(result);
         }
+    } catch (error) {
+        console.log(error);
+        if (req.statusCode === 200) {
+            res.status(500);
+        }
+        if (error instanceof Error) {
+            res.send(error.message);
+        } else {
+            res.send('Erro inesperado');
+        }
+    }
+});
+
+// => Create task
+app.post('/tasks', async (req: Request, res: Response) => {
+    try {
+        const { id, title, description } = req.body;
+
+        // id
+        isNotEmpty(id, 'id', res);
+        isString(id, 'id', res);
+        checkMinimumLength(id, 'id', 4, res);
+        checkPrefixId(id, 'id', 't', res);
+        const [idAlreadyExists]: TTasks[] | undefined = await db('tasks').where(
+            { id }
+        );
+        if (idAlreadyExists) {
+            res.status(400);
+            throw new Error('O "id" não está disponível');
+        }
+
+        // title
+        isNotEmpty(title, 'title', res);
+        isString(title, 'title', res);
+        checkMinimumLength(title, 'title', 2, res);
+
+        // description
+        isNotEmpty(description, 'description', res);
+        isString(description, 'description', res);
+        checkMinimumLength(description, 'description', 2, res);
+
+        const newTask = {
+            id,
+            title,
+            description,
+        };
+        await db('tasks').insert(newTask);
+
+        const [insertedTask] = await db('tasks').where({ id });
+
+        res.status(201).send({
+            message: 'Task criada com sucesso',
+            task: insertedTask,
+        });
     } catch (error) {
         console.log(error);
         if (req.statusCode === 200) {
