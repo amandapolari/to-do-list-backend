@@ -19,24 +19,7 @@ app.listen(3003, () => {
     console.log(`Servidor rodando na porta ${3003}`);
 });
 
-// => TEST:
-app.get('/ping', async (req: Request, res: Response) => {
-    try {
-        res.status(200).send({ message: 'Pong!' });
-    } catch (error) {
-        console.log(error);
-        if (req.statusCode === 200) {
-            res.status(500);
-        }
-        if (error instanceof Error) {
-            res.send(error.message);
-        } else {
-            res.send('Erro inesperado');
-        }
-    }
-});
-
-// ============== users
+// ==> enpoints para: users
 
 // => Get all users | Get user by id
 app.get('/users', async (req: Request, res: Response) => {
@@ -72,7 +55,6 @@ app.post('/users', async (req: Request, res: Response) => {
         const { id, name, email, password } = req.body;
 
         // => validações
-
         // id
         isNotEmpty(id, 'id', res);
         isString(id, 'id', res);
@@ -161,7 +143,7 @@ app.delete('/users/:id', async (req: Request, res: Response) => {
     }
 });
 
-// ============== tasks
+// ==> enpoints para: tasks
 
 // => Get all tasks | Get task by title | Get task by description
 app.get('/tasks', async (req: Request, res: Response) => {
@@ -194,6 +176,7 @@ app.post('/tasks', async (req: Request, res: Response) => {
     try {
         const { id, title, description } = req.body;
 
+        // validações:
         // id
         isNotEmpty(id, 'id', res);
         isString(id, 'id', res);
@@ -217,6 +200,7 @@ app.post('/tasks', async (req: Request, res: Response) => {
         isString(description, 'description', res);
         checkMinimumLength(description, 'description', 2, res);
 
+        // lógica:
         const newTask = {
             id,
             title,
@@ -246,6 +230,7 @@ app.post('/tasks', async (req: Request, res: Response) => {
 // => Edit task by id
 app.put('/tasks/:id', async (req: Request, res: Response) => {
     try {
+        // capturando dados:
         const idToEdit = req.params.id;
         const newId = req.body.id;
         const newTitle = req.body.title;
@@ -253,10 +238,12 @@ app.put('/tasks/:id', async (req: Request, res: Response) => {
         const newCreatedAt = req.body.createdAt;
         const newStatus = req.body.status;
 
+        // validações:
+
+        // task
         const [task]: TTasks[] | undefined[] = await db('tasks').where({
             id: idToEdit,
         });
-
         if (!task) {
             res.status(404);
             throw new Error('O id fornecido não está registrado no sistema');
@@ -297,6 +284,7 @@ app.put('/tasks/:id', async (req: Request, res: Response) => {
             isNumber(newStatus, 'newStatus', res);
         }
 
+        // lógica:
         const newTask: TTasks = {
             id: newId || task.id,
             title: newTitle || task.title,
@@ -354,7 +342,6 @@ app.delete('/tasks/:id', async (req: Request, res: Response) => {
     }
 });
 
-// Adicionando uma pessoa responsável pela tarefa
 // => Add user to task by id
 app.post(
     '/tasks/:taskId/users/:userId',
@@ -363,7 +350,8 @@ app.post(
             const taskId = req.params.taskId;
             const userId = req.params.userId;
 
-            // => validações
+            // => validações:
+
             // taskId
             checkPrefixId(taskId, 'taskId', 't', res);
             isNotEmpty(taskId, 'taskId', res);
@@ -377,6 +365,7 @@ app.post(
                     'O "taskId" fornecido não está cadastrado no sistema'
                 );
             }
+
             // userId
             checkPrefixId(userId, 'userId', 'u', res);
             isNotEmpty(userId, 'userId', res);
@@ -390,6 +379,7 @@ app.post(
                     'O "userId" fornecido não está cadastrado no sistema'
                 );
             }
+
             // Verificar se o usuário já recebeu a tarefa
             const [existingUserTask]: TUsersTasks[] | undefined = await db(
                 'users_tasks'
@@ -399,7 +389,8 @@ app.post(
                 res.status(400);
                 throw new Error('O usuário já recebeu essa tarefa');
             }
-            //
+
+            // lógica:
             const newUserTask: TUsersTasks = {
                 user_id: userId,
                 task_id: taskId,
@@ -432,6 +423,7 @@ app.delete(
             const userId = req.params.userId;
 
             // => validações
+
             // taskId
             checkPrefixId(taskId, 'taskId', 't', res);
             isNotEmpty(taskId, 'taskId', res);
@@ -445,6 +437,7 @@ app.delete(
                     'O "taskId" fornecido não está cadastrado no sistema'
                 );
             }
+
             // userId
             checkPrefixId(userId, 'userId', 'u', res);
             isNotEmpty(userId, 'userId', res);
@@ -458,6 +451,8 @@ app.delete(
                     'O "userId" fornecido não está cadastrado no sistema'
                 );
             }
+
+            // lógica:
             await db('users_tasks')
                 .del()
                 .where({ user_id: userId })
@@ -482,51 +477,38 @@ app.delete(
 // => Get tasks with users
 app.get('/tasks/users', async (req: Request, res: Response) => {
     try {
-        // Implementar essa lógica abaixo:
-        /* 
-        SELECT *
-        FROM tasks
-        LEFT JOIN users_tasks ON users_tasks.task_id = tasks.id
-        LEFT JOIN users ON users_tasks.user_id = users.id;
-        */
-
-        // const result = await db('tasks')
-        //     .select(
-        //         'tasks.id AS taskId',
-        //         'title',
-        //         'description',
-        //         'created_at AS createdAt',
-        //         'status',
-        //         'user_id AS userId',
-        //         'name',
-        //         'email',
-        //         'password'
-        //     )
-        //     .leftJoin('users_tasks', 'users_tasks.task_id', '=', 'tasks.id')
-        //     .leftJoin('users', 'users_tasks.user_id', '=', 'users.id');
-
+        // Resgatando todas as tasks:
         const tasks: TTasks[] = await db('tasks');
+        // console.log(tasks);
 
+        // Preparando um array para receber o resultado dos dois "for":
         const result: TTasksWithUsers[] = [];
 
+        // Percorrendo a lista de "users_tasks" (identificada nesse caso como "tasks"), afim de obter o "id do usuário" (identificada como "users_tasks" nesse caso), que é o responsável pela task:
         for (let task of tasks) {
             const responsibles = [];
             const users_tasks: TUsersTasks[] = await db('users_tasks').where({
                 task_id: task.id,
             });
+            // console.log(users_tasks);
+
+            // Com o "user_task" (que é o id do usuário responsável pela task), vou consultar a tabela "users" para obter mais detalhes como "name", "email", ... :
             for (let user_task of users_tasks) {
                 const [user]: TUsers[] = await db('users').where({
                     id: user_task.user_id,
                 });
+                // console.log(user);
+
                 responsibles.push(user);
             }
+
+            // Modelando resutado para colocar dentro do array "result":
             const newTaskWithUsers: TTasksWithUsers = {
                 ...task,
                 responsibles,
             };
             result.push(newTaskWithUsers);
         }
-
         res.status(200).send(result);
     } catch (error) {
         console.log(error);
